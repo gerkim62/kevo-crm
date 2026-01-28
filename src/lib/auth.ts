@@ -29,7 +29,7 @@ export const auth = betterAuth({
         defaultValue: Role.user,
         input: true,
         references: {
-          model: "User",
+          model: "user",
           field: "role",
         },
       },

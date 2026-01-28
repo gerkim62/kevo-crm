@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  role          Role
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model Lead {
+  id          String       @id @default(cuid())
+  fullName    String
+  phoneNumber String
+  email       String?
+  status      LeadStatus
+  priority    LeadPriority
+  source      LeadSource
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  name       String
+  url        String
+  type       DocumentType
+  clientName String
+  sizeBytes  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Policy {
+  id                        String         @id @default(cuid())
+  policyNumber              String
+  clientName                String
+  insurer                   String
+  type                      PolicyType
+  status                    PolicyStatus
+  premium                   Float
+  sumInsured                Float
+  startDate                 DateTime
+  expiryDate                DateTime
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  clientPhone               String?
+  vehicleRegistrationNumber String?
+  claims                    Claim[]
+  commissions               Commission[]
+  notifications             Notification[]
+}
+
+model Claim {
+  id                String             @id @default(cuid())
+  policyId          String
+  incidentDate      DateTime
+  type              ClaimType
+  estimatedLosKes   Float
+  description       String
+  status            ClaimStatus
+  policy            Policy             @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  evidenceDocuments EvidenceDocument[]
+}
+
+model EvidenceDocument {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  claimId   String
+  claim     Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+}
+
+model Commission {
+  id             String           @id @default(cuid())
+  policyId       String
+  amount         Float
+  status         CommissionStatus
+  commissionDate DateTime
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  policy         Policy           @relation(fields: [policyId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  title     String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  policyId  String?
+  policy    Policy?  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum LeadStatus {
+  new
+  converted
+  lost
+}
+
+enum LeadPriority {
+  low
+  high
+}
+
+enum LeadSource {
+  referral
+  call
+  social_media
+}
+
+enum DocumentType {
+  policy
+  kycId
+  kycPin
+}
+
+enum PolicyType {
+  life_insurance
+  health_insurance
+  motor_insurance
+  property_insurance
+  travel_insurance
+  personal_accident_insurance
+  group_personal_accident_insurance
+  WIBA_insurance
+  all_risks_insurance
+  public_liability_insurance
+}
+
+enum PolicyStatus {
+  active
+  cancelled
+  pending
+}
+
+enum ClaimType {
+  Accident
+  Fire
+  Theft
+  Flood
+  Vandalism
+  Other
+}
+
+enum ClaimStatus {
+  Pending
+  Paid
+  Approved
+  Reject
+}
+
+enum CommissionStatus {
+  Pending
+  Paid
+}
